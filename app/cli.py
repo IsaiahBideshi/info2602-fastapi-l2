@@ -1,4 +1,4 @@
-import typer    
+import typer
 from app.database import create_db_and_tables, get_session, drop_all
 from app.models import User
 from fastapi import Depends
@@ -11,6 +11,10 @@ cli = typer.Typer()
 
 @cli.command()
 def initialize():
+    """
+    Initializes the database by creating tables and adding a default user
+    """
+    
     with get_session() as db: # Get a connection to the database
         drop_all() # delete all tables
         create_db_and_tables() #recreate all tables
@@ -23,7 +27,11 @@ def initialize():
         print("Database Initialized")
 
 @cli.command()
-def get_user(username:str):
+def get_user(username: Annotated[str, typer.Argument(help="Username of the user to retrieve")]):
+    """
+    Finds a user given their username and displays their information
+    """
+
     with get_session() as db: # Get a connection to the database
             user = db.exec(select(User).where(User.username == username)).first()
             if not user:
@@ -33,6 +41,9 @@ def get_user(username:str):
 
 @cli.command()
 def get_all_users():
+    """
+    Shows all users in the database
+    """
     with get_session() as db:
         users = db.exec(select(User)).all()
         if not users:
@@ -43,7 +54,11 @@ def get_all_users():
 
 
 @cli.command()
-def change_email(username: str, new_email:str):
+def change_email(username: Annotated[str, typer.Argument(help="Username of the user to change email")], new_email: Annotated[str, typer.Argument(help="New email address")]):
+    """
+    Changes the email of a user given their username
+    """    
+    
     with get_session() as db:
         user = db.exec(select(User).where(User.username == username)).first()
         
@@ -59,7 +74,11 @@ def change_email(username: str, new_email:str):
         print("Successfully changed email!")
 
 @cli.command()
-def create_user(username: str, email:str, password: str):
+def create_user(username: Annotated[str, typer.Argument(help="Username of the new user")], email: Annotated[str, typer.Argument(help="Email of the new user")], password: Annotated[str, typer.Argument(help="Password of the new user")]):
+    """
+    Creates a new user with the given username, email, and password
+    """    
+    
     with get_session() as db:
         newUser = User(username, email, password)
         try:
@@ -72,7 +91,11 @@ def create_user(username: str, email:str, password: str):
         print(f"Successfully added user {username}")
 
 @cli.command()
-def delete_user(username: str):
+def delete_user(username: Annotated[str, typer.Argument(help="Username of the user to delete")]):
+    """
+    Deletes a user given their username
+    """
+
     with get_session() as db:
         user = db.exec(select(User).where(User.username == username)).first()
 
@@ -86,7 +109,12 @@ def delete_user(username: str):
         print("Succesfully deleted user!")
 
 @cli.command()
-def search_user(query: str):
+def search_user(query: Annotated[str, typer.Argument(help="Search query for username or email")]):
+    """
+    Searches for a user by username or email
+    """
+
+
     with get_session() as db:
         if '@' in query:
             print("Searching for email")
@@ -111,8 +139,11 @@ def search_user(query: str):
 
 
 @cli.command()
-def list_users(limit: Annotated[int, typer.Argument()] = 10, offset: Annotated[int, typer.Argument()] = 0,):     # 'Annotated[]' got from link in lab 
-    print(limit, offset)
+def list_users(limit: Annotated[int, typer.Argument(help="Amount of users per page")] = 10, offset: Annotated[int, typer.Argument(help="Offset for pagination")] = 0,):     # 'Annotated[]' got from link in lab 
+    """
+    Lists users with pagination
+    """
+
     with get_session() as db:
         users = db.exec(select(User).offset(offset).limit(limit)).all()
         for user in users:
